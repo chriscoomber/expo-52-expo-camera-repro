@@ -1,7 +1,7 @@
-import { CameraView, CameraType, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { useCallback, useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import Navigation from './navigation';
+import { Button, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Navigation from './Navigation';
 import { DefaultTheme } from '@react-navigation/native';
 
 export default function App() {
