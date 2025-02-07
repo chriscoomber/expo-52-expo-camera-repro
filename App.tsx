@@ -1,97 +1,69 @@
-import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
-import { useCallback, useState } from 'react';
-import { Button, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Navigation from './Navigation';
-import { DefaultTheme } from '@react-navigation/native';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { useState } from 'react';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function App() {
+  const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
 
-  const [screen, setScreen] = useState<'react-navigation' | 'ScanQRScreenWithoutReactNavigation' | 'menu'>('menu')
-
-
-  if (screen === 'react-navigation') {
-    return <Navigation theme={DefaultTheme}/>
-  } else if (screen === 'ScanQRScreenWithoutReactNavigation') {
-    return <ScanQRScreenWithoutReactNavigation goBack={() => setScreen('menu')}/>
-  } else {
-    return <View style={{flex: 1, backgroundColor: 'black'}}>
-      {(!permission || !permission.granted) ? 
-        <Button title='Request camera permissions' onPress={requestPermission}/> : 
-        <Text>Camera permissions granted</Text>}
-        <Button title='Go to react-navigation' onPress={() => setScreen('react-navigation')}/>
-        <Button title='Go to scan qr without react navigation' onPress={() => setScreen('ScanQRScreenWithoutReactNavigation')}/>
-    </View>
+  if (!permission) {
+    // Camera permissions are still loading.
+    return <View />;
   }
-}
 
-function ScanQRScreenWithoutReactNavigation(props: {goBack: () => void}) {
-    const [scanned, setScanned] = useState(false);
-    const [camera, setCamera] = useState<CameraView | null>(null);
-    const { height } = useWindowDimensions();
-    const [barcodeContents, setBarcodeContents] = useState('');
-  
-    // Set QR bounds
-    const [top, setTop] = useState(0);
-    const [left, setLeft] = useState(0);
-    const [qrHeight, setQRHeight] = useState(0);
-    const [qrWidth, setQRWidth] = useState(0);
-  
-    /** Callback for when a barcode is scanned. */
-    const handleBarCodeScanned = useCallback(
-      async (result: BarcodeScanningResult) => {
-        const { data, bounds } = result;
-        camera?.pausePreview();
-        setScanned(true);
-  
-        if (bounds) {
-          const origin = { y: Number(bounds.origin.y), x: Number(bounds.origin.x) };
-          const size = {
-            height: Number(bounds.size.height),
-            width: Number(bounds.size.width)
-          };
-  
-          const padding = 50;
-          setTop(origin.y - padding / 2);
-          setLeft(origin.x - padding / 2);
-          setQRHeight(size.height + padding);
-          setQRWidth(size.height + padding);
-        }
-  
-        setBarcodeContents(data)
-        
-      },
-      [camera]
-    );
-  
+  if (!permission.granted) {
+    // Camera permissions are not granted yet.
     return (
-      <View style={{ backgroundColor: 'black', flex: 1 }}>
-        <View
-          style={{
-            position: 'absolute',
-            top: top,
-            left: left,
-            height: qrHeight,
-            width: qrWidth,
-            zIndex: 2,
-            pointerEvents: 'none'
-          }}
-        >
-          <View style={{ width: qrWidth, height: qrHeight, borderWidth: 2, borderColor: 'red' }}/>
-        </View>
-        <View style={{ flex: 1 }}>
-          <CameraView
-            ref={ref => {
-              setCamera(ref);
-            }}
-            style={[StyleSheet.absoluteFill, { height: height }]}
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          />
-          <View style={{height: 80}}/>
-          <Button title='go back' onPress={props.goBack}/>
-          {barcodeContents && <Text style={{backgroundColor: 'white'}}>Barcode read: "{barcodeContents}"{"\n"}Return to home and come back to this screen to un-freeze the preview.</Text>}
-        </View>
+      <View style={styles.container}>
+        <Text style={styles.message}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
       </View>
     );
+  }
+
+  function toggleCameraFacing() {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  }
+
+  return (
+    <View style={styles.container}>
+      <CameraView style={styles.camera} facing={facing}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+            <Text style={styles.text}>Flip Camera</Text>
+          </TouchableOpacity>
+        </View>
+      </CameraView>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  message: {
+    textAlign: 'center',
+    paddingBottom: 10,
+  },
+  camera: {
+    flex: 1,
+  },
+  buttonContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
+    margin: 64,
+  },
+  button: {
+    flex: 1,
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+});
