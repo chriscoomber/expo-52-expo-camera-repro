@@ -3,10 +3,9 @@ import { useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function App() {
-  const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
-  const [enabled, setEnabled] = useState(true);
-
+  const [cameraViewKey, setCameraViewKey] = useState(0);
+  
   if (!permission) {
     // Camera permissions are still loading.
     return <View />;
@@ -22,19 +21,12 @@ export default function App() {
     );
   }
 
-  function toggleCameraFacing() {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  }
-
   return (
     <View style={styles.container}>
-      {enabled && <CameraView style={styles.camera} facing={facing}/>}
+      <CameraView key={cameraViewKey} style={styles.camera} />
       <View style={[StyleSheet.absoluteFill, styles.buttonContainer]}>
-        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-          <Text style={styles.text}>Flip Camera (currently: {facing})</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => setEnabled(!enabled)}>
-          <Text style={styles.text}>{enabled ? "Disable" : "Enable"} Camera</Text>
+        <TouchableOpacity style={styles.button} onPress={() => setCameraViewKey(old => old+1)}>
+          <Text style={styles.text}>Re-create CameraView (key: {cameraViewKey})</Text>
         </TouchableOpacity>
       </View>
     </View>
